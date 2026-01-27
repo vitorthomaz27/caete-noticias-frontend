@@ -66,3 +66,21 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+@keyframes fadeInUpModern {
+  from {
+    opacity: 0;
+    transform: translateY(20px); /* Começa um pouco mais para baixo */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0); /* Termina na posição correta */
+  }
+}
+
+/* Classe utilitária para aplicar a animação */
+.anime-fade-in {
+  /* Nome da animação | Duração | Curva de velocidade | Mantém o estado final */
+  animation: fadeInUpModern 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  /* Garante que o elemento comece invisível antes da animação rodar */
+  opacity: 0; 
+}

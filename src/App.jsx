@@ -109,7 +109,9 @@ function PublicApp() {
         <main style={scrollableContent}>
           {/* ABA INÍCIO */}
           {activeTab === 'inicio' && (
-            <div style={contentPadding}>
+            <div style={contentPadding}
+                 className="anime-fade-in" 
+                >
               {/* BANNER DE ANÚNCIO DINÂMICO */}
               <a 
                 href={config.banner.link || "#"} 
@@ -250,7 +252,8 @@ function PublicApp() {
                   {noticias.map(item => (
                     <article 
                       key={item.id} 
-                      style={{...newsRow, cursor: 'pointer'}} 
+                      style={{...newsRow, cursor: 'pointer'}}
+                      className="anime-fade-in" 
                       onClick={() => setNoticiaAberta(item)} // Abre a notícia ao clicar
                     >
                       <img src={item.imagem_url} style={newsThumb} alt="" />
@@ -283,7 +286,8 @@ function PublicApp() {
           )}
 
           {activeTab === 'guia' && (
-            <div style={contentPadding}>
+            <div style={contentPadding}
+            className="anime-fade-in" >
               {/* BARRA DE BUSCA - ADICIONADA AQUI */}
               <div style={{ marginBottom: '20px' }}>
                 <div style={searchBar}>
@@ -332,7 +336,8 @@ function PublicApp() {
           )}
 
           {activeTab === 'vagas' && (
-            <div style={contentPadding}>
+            <div style={contentPadding}
+            className="anime-fade-in" >
               <h2 style={sectionTitle}>Vagas de Emprego</h2>
               {vagas.map(vaga => (
                 <div key={vaga.id} style={jobCard}>
@@ -870,17 +875,13 @@ function AdminPortal() {
                   <input placeholder="Título da Vaga" style={inStyle} value={form.titulo} onChange={e=>setForm({...form, titulo: e.target.value})} />
                   <input placeholder="Empresa" style={inStyle} value={form.empresa} onChange={e=>setForm({...form, empresa: e.target.value})} />
                   <textarea placeholder="Descrição" style={{...inStyle, height: '80px'}} value={form.descricao} onChange={e=>setForm({...form, descricao: e.target.value})} />
-                </>
-              )}
-
-              {aba !== 'vaga' && (
                 <label style={drop}>
                   <Camera/> {arquivo ? arquivo.name : "Selecionar Foto"}
                   <input type="file" style={{display:'none'}} onChange={e=>setArquivo(e.target.files[0])} />
                 </label>
+                  <button type="submit" style={subBtn}>PUBLICAR AGORA</button>
+                </>      
               )}
-              
-              <button type="submit" style={subBtn}>PUBLICAR AGORA</button>
             </form>
           )}
           <Link to="/" style={{textAlign:'center', color:'#666', marginTop: '20px', display: 'block'}}>Voltar ao App</Link>
@@ -892,7 +893,7 @@ function AdminPortal() {
 
 // --- ESTILOS (UNIFICADOS PARA CORREÇÃO DE LARGURA) ---
 const globalWrapper = { 
-  background: '#000000', 
+  background: '#050505', // Um pouco mais profundo
   minHeight: '100vh', 
   width: '100vw', 
   display: 'flex', 
@@ -900,20 +901,19 @@ const globalWrapper = {
   margin: 0, 
   padding: 0,
   overflowX: 'hidden',
-  fontFamily: '"Helvetica", Times, serif',
+  fontFamily: "'Inter', system-ui, -apple-system, sans-serif", // Stack moderna
 };
 
 const appContainer = { 
   width: '100%', 
-  maxWidth: '480px', // Trava a largura máxima para parecer um celular centralizado
+  maxWidth: '480px', 
   height: '100vh', 
-  background: '#000', 
+  background: '#0d0d0f', // Cinza azulado muito profundo
   display: 'flex', 
   flexDirection: 'column', 
   position: 'relative', 
   overflow: 'hidden',
   boxSizing: 'border-box',
-  boxShadow: '0 0 50px rgba(0,0,0,0.5)',
 };
 
 const headerStyle = { 
@@ -932,7 +932,7 @@ const logoImgStyle = { height: '38px', objectFit: 'contain' };
 const scrollableContent = { 
   flex: 1, 
   overflowY: 'auto', 
-  paddingBottom: '80px', 
+  paddingBottom: '100px', // Aumentado para o conteúdo não ficar escondido atrás da barra maior
   width: '100%',
   boxSizing: 'border-box' 
 };
@@ -948,10 +948,12 @@ const bottomNav = {
   bottom: 0, 
   left: 0,
   right: 0,
-  height: '65px', 
+  height: '85px', // Aumentado de 65px para 85px
   display: 'flex', 
-  background: '#0a0a0a', 
-  borderTop: '1px solid #222',
+  background: 'rgba(10, 10, 10, 0.95)', // Toque de transparência
+  backdropFilter: 'blur(15px)', // Glassmorphism
+  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+  paddingBottom: '18px', // O segredo para não "colar" na borda
   boxSizing: 'border-box',
   zIndex: 1000
 };
@@ -969,16 +971,24 @@ const navBtnStyle = {
 };
 
 const sectionTitle = { 
-  fontSize: '18px', 
-  fontWeight: '700', 
-  margin: '25x 0 15px 0', 
-  borderLeft: '4px solid #ff0000', 
-  paddingLeft: '10px',
+  fontSize: '20px', 
+  fontWeight: '800', 
+  margin: '30px 0 15px 0', 
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
   color: '#fff',
-  borderBottom: '1px solid #333',
-  paddingBottom: '8px',
-  letterSpacing: '0.5px',
+  letterSpacing: '-0.5px', // Título mais "compacto" e moderno
 };
+
+const titleIndicator = {
+  width: '4px',
+  height: '20px',
+  background: '#ff0000',
+  borderRadius: '2px',
+  boxShadow: '0 0 10px rgba(255,0,0,0.5)'
+};
+
 
 const superBannerAd = { 
   background: 'linear-gradient(45deg, #ff0000, #cc0000)', 
@@ -996,26 +1006,84 @@ const heroImg = { width: '100%', height: '100%', objectFit: 'cover' };
 const heroGradient = { position: 'absolute', bottom: 0, width: '100%', padding: '15px', background: 'linear-gradient(transparent, rgba(0,0,0,0.95))', boxSizing: 'border-box' };
 const quickLinksGrid = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' };
 const quickLinkItem = { background: '#111', padding: '15px', borderRadius: '8px', border: '1px solid #222', boxSizing: 'border-box' };
-const newsRow = { display: 'flex', gap: '12px', padding: '12px 0', borderBottom: '1px solid #111', width: '100%', boxSizing: 'border-box' };
+const newsRow = { 
+  display: 'flex', 
+  gap: '14px', 
+  padding: '15px', 
+  background: 'rgba(255, 255, 255, 0.03)', // Transparência sutil
+  backdropFilter: 'blur(10px)', // O segredo do vidro
+  borderRadius: '16px', 
+  border: '1px solid rgba(255, 255, 255, 0.05)', 
+  marginBottom: '12px',
+  width: '100%', 
+  boxSizing: 'border-box' 
+};
 const newsThumb = { width: '90px', height: '65px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 };
 const newsContent = { flex: 1 };
 const newsCategory = { fontSize: '9px', fontWeight: 'bold', color: '#ff0000' };
 const newsTitleCompact = { margin: '4px 0', fontSize: '13px', fontWeight: '700', lineHeight: '1.4', color: '#fff' };
 const newsDate = { fontSize: '10px', color: '#666' };
-const premiumBusinessCard = { display: 'flex', gap: '15px', background: '#0f0f0f', padding: '15px', borderRadius: '12px', border: '1px solid #ff0000', marginBottom: '15px', width: '100%', boxSizing: 'border-box' };
+const premiumBusinessCard = { 
+  display: 'flex', 
+  gap: '15px', 
+  background: 'linear-gradient(145deg, #111, #050505)', 
+  padding: '18px', 
+  borderRadius: '18px', 
+  border: '1px solid rgba(255, 0, 0, 0.3)', // Borda brilhante sutil
+  marginBottom: '15px', 
+  width: '100%', 
+  boxSizing: 'border-box',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+};
 const businessThumb = { width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 };
 const businessCat = { fontSize: '10px', color: '#ff0000', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', display: 'block' };
 const businessName = { margin: '0 0 10px 0', fontSize: '16px', fontWeight: '800', color: '#fff' };
 const businessActions = { display: 'flex', gap: '8px', marginTop: '10px' };
-const actionBtnZap = { flex: 1, padding: '10px', background: '#25D366', borderRadius: '8px', color: '#fff', textAlign: 'center', fontSize: '12px', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' };
+const actionBtnZap = { 
+  flex: 1, 
+  padding: '12px', 
+  background: 'linear-gradient(135deg, #25D366, #128c7e)', 
+  borderRadius: '12px', 
+  color: '#fff', 
+  textAlign: 'center', 
+  fontSize: '13px', 
+  textDecoration: 'none', 
+  fontWeight: '700', 
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'center', 
+  gap: '8px',
+  transition: 'transform 0.2s'
+};
 const actionBtnCall = { flex: 1, padding: '10px', background: '#333', borderRadius: '8px', color: '#fff', textAlign: 'center', fontSize: '12px', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' };
-const standardBusinessRow = { padding: '15px', background: '#0a0a0a', borderRadius: '12px', marginBottom: '10px', width: '100%', boxSizing: 'border-box' };const jobCard = { background: '#111', padding: '20px', borderRadius: '15px', borderLeft: '4px solid #ff0000', marginBottom: '20px', width: '100%', boxSizing: 'border-box' };
+const standardBusinessRow = { padding: '15px', background: '#0a0a0a', borderRadius: '12px', marginBottom: '10px', width: '100%', boxSizing: 'border-box' };
+const jobCard = { 
+  background: 'rgba(255, 75, 43, 0.05)', // Tom avermelhado bem suave
+  padding: '20px', 
+  borderRadius: '20px', 
+  border: '1px solid rgba(255, 0, 0, 0.15)', 
+  marginBottom: '20px', 
+  width: '100%', 
+  boxSizing: 'border-box',
+  backdropFilter: 'blur(5px)'
+};
 const jobBtn = { marginTop: '15px', width: '100%', padding: '15px', background: '#ff0000', borderRadius: '10px', color: '#fff', fontWeight: 'bold', display: 'block', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' };const inStyle = { width: '100%', padding: '12px', borderRadius: '8px', background: '#111', border: '1px solid #333', color: '#fff', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' };
 const selectorGrid = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '25px', width: '100%' };
 const selBase = { padding: '10px 0', background: '#111', color: '#888', border: 'none', borderRadius: '6px', fontSize: '11px' };
 const selActive = { ...selBase, background: '#ff0000', color: '#fff', fontWeight: 'bold' };
 const drop = { width: '100%', padding: '20px', border: '2px dashed #333', borderRadius: '12px', textAlign: 'center', color: '#666', boxSizing: 'border-box' };
-const subBtn = { width: '100%', padding: '14px', background: '#ff0000', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' };
+const subBtn = { 
+  width: '100%', 
+  padding: '16px', 
+  background: '#ff0000', 
+  color: '#fff', 
+  border: 'none', 
+  borderRadius: '14px', 
+  fontWeight: '800', 
+  fontSize: '15px',  
+  cursor: 'pointer',
+  boxShadow: '0 4px 15px rgba(255,0,0,0.3)'
+};
 const adminSection = { border: '1px solid #222', padding: '15px', borderRadius: '12px', background: '#050505', width: '100%', boxSizing: 'border-box', marginBottom: '20px' };
 const sectionAdminTitle = { margin: '0 0 15px 0', color: '#ff0000', fontSize: '11px', textTransform: 'uppercase' };
 const utilListRow = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: '#111', borderRadius: '6px', marginTop: '5px', width: '100%', boxSizing: 'border-box' };
