@@ -26,6 +26,8 @@ function PublicApp() {
   const [termoBusca, setTermoBusca] = useState('');
   const [noticiaAberta, setNoticiaAberta] = useState(null);
   const [utilidadeAberta, setUtilidadeAberta] = useState(null);
+  // No início do seu componente App
+  const [mostrarBannerPush, setMostrarBannerPush] = useState(Notification.permission !== 'granted');
   const inscreverParaNotificacoes = async () => {
     try {
       // 1. Garante que o navegador suporta Service Worker
@@ -50,6 +52,7 @@ function PublicApp() {
 
         if (!error) {
           console.log("Sucesso! Token salvo:", token);
+          setMostrarBannerPush(false);
           alert("Notificações ativadas com sucesso!");
         }
       }
@@ -133,6 +136,7 @@ function PublicApp() {
                   {config.banner.subtitulo || "Sua marca em destaque no nosso app"}
                 </p>
               </a>
+              {mostrarBannerPush && (
                 <div style={{
                   background: '#0a0a0a', 
                   padding: '15px', 
@@ -160,6 +164,7 @@ function PublicApp() {
                     ATIVAR NOTIFICAÇÕES
                   </button>
                 </div>
+              )}
               {/* SEÇÃO DE DESTAQUES (NOTÍCIAS) */}
               <h2 style={sectionTitle}><Star size={18} color="#ff0000"/> Destaques</h2>
               {noticias.filter(n => n.tipo === 'destaque').slice(0, 2).map(item => (
