@@ -134,7 +134,7 @@ function PublicApp() {
                 </p>
               </a>
                 <div style={{
-                  background: '#1a1a1a', 
+                  background: '#0a0a0a', 
                   padding: '15px', 
                   borderRadius: '10px', 
                   border: '1px solid #333',
@@ -147,7 +147,7 @@ function PublicApp() {
                   <button 
                     onClick={inscreverParaNotificacoes}
                     style={{
-                      background: '#ff0000',
+                      background: '#000000',
                       color: '#fff',
                       border: 'none',
                       padding: '10px',
@@ -627,23 +627,39 @@ function AdminPortal() {
   };
 
   const handlePostGeral = async (e) => {
-    e.preventDefault();
-    setEnviando(true);
-    try {
-      let imagem_url = "";
-      if (arquivo) {
-        const nomeUnico = `${Date.now()}_${arquivo.name}`;
-        await supabase.storage.from('midia-caete').upload(nomeUnico, arquivo);
-        imagem_url = supabase.storage.from('midia-caete').getPublicUrl(nomeUnico).data.publicUrl;
+      if (e) e.preventDefault();
+      if (enviando) return;
+
+      setEnviando(true);
+      try {
+        let imagem_url = "";
+        
+        // Upload de imagem apenas se houver arquivo
+        if (arquivo) {
+          const nomeUnico = `${Date.now()}_${arquivo.name}`;
+          await supabase.storage.from('midia-caete').upload(nomeUnico, arquivo);
+          imagem_url = supabase.storage.from('midia-caete').getPublicUrl(nomeUnico).data.publicUrl;
+        }
+
+        // Define a tabela e o payload baseado na aba
+        const tabela = aba === 'noticia' ? 'noticias' : 'vagas';
+        const payload = aba === 'noticia' 
+          ? { titulo: form.titulo, resumo: form.resumo, tipo: form.tipo, imagem_url }
+          : { titulo: form.titulo, empresa: form.empresa, descricao: form.descricao, whatsapp: form.whatsapp };
+
+        const { error } = await supabase.from(tabela).insert([payload]);
+        
+        if (error) throw error;
+
+        alert("Publicado com sucesso!");
+        setArquivo(null);
+        setForm({ ...form, titulo: '', resumo: '', empresa: '', descricao: '' });
+      } catch (err) { 
+        alert("Erro: " + err.message); 
+      } finally { 
+        setEnviando(false); 
       }
-      let tabela = aba === 'noticia' ? 'noticias' : (aba === 'guia' ? 'guia_comercial' : 'vagas');
-      let payload = aba === 'noticia' ? { titulo: form.titulo, resumo: form.resumo, tipo: form.tipo, imagem_url } :
-                    aba === 'guia' ? { nome: form.nome, categoria: form.categoria, whatsapp: form.whatsapp, plano: form.plano, imagem_url } :
-                    { titulo: form.titulo, empresa: form.empresa, descricao: form.descricao, whatsapp: form.whatsapp };
-      const { error } = await supabase.from(tabela).insert([payload]);
-      if (!error) alert("Publicado!");
-    } catch (err) { alert(err.message); } finally { setEnviando(false); }
-  };
+    };
 
   return (
     <div style={globalWrapper}>
@@ -658,7 +674,7 @@ function AdminPortal() {
             <button onClick={() => setAba('push')} style={aba === 'push' ? selActive : selBase}>Push Ads</button>
           </div>
 
-            {aba === 'push' && (
+          {aba === 'push' && (
               <div style={adminSection}>
                 <h4 style={sectionAdminTitle}>🚀 Disparar Notificação em Massa</h4>
                 <div style={{ background: '#222', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
@@ -666,32 +682,23 @@ function AdminPortal() {
                     📢 <strong>{totalInscritos}</strong> dispositivos prontos para receber.
                   </span>
                 </div>
-
                 <input 
-                  placeholder="Título (Ex: Urgente: Nova Vaga em Caeté)" 
-                  style={inStyle} 
-                  value={pushForm.titulo} 
+                  placeholder="Título" style={inStyle} value={pushForm.titulo} 
                   onChange={e => setPushForm({...pushForm, titulo: e.target.value})} 
                 />
                 <textarea 
-                  placeholder="Mensagem Curta (O que o usuário lerá no celular)" 
-                  style={{ ...inStyle, height: '80px' }} 
-                  value={pushForm.mensagem} 
-                  onChange={e => setPushForm({...pushForm, mensagem: e.target.value})} 
+                  placeholder="Mensagem" style={{ ...inStyle, height: '80px' }} 
+                  value={pushForm.mensagem} onChange={e => setPushForm({...pushForm, mensagem: e.target.value})} 
                 />
                 <input 
-                  placeholder="Link de Destino (Ex: https://caete-noticias.vercel.app/vagas)" 
-                  style={inStyle} 
-                  value={pushForm.link} 
+                  placeholder="Link" style={inStyle} value={pushForm.link} 
                   onChange={e => setPushForm({...pushForm, link: e.target.value})} 
                 />
-
                 <button onClick={enviarPush} style={subBtn} disabled={enviando}>
                   {enviando ? "ENVIANDO..." : "DISPARAR AGORA"}
                 </button>
               </div>
             )}
-
             {aba === 'config' ? (
               <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
                 
@@ -809,6 +816,12 @@ function AdminPortal() {
                     <option value="Lojas">🛒 Lojas</option>
                   </select>
                   <input placeholder="WhatsApp (Com DDD)" style={inStyle} value={form.whatsapp} onChange={e=>setForm({...form, whatsapp: e.target.value})} />
+                  
+                  <label style={drop}>
+                    <Camera/> {arquivo ? arquivo.name : "Logo da Empresa"}
+                    <input type="file" style={{display:'none'}} onChange={e=>setArquivo(e.target.files[0])} />
+                  </label>
+                  
                   <select style={inStyle} value={form.plano} onChange={e=>setForm({...form, plano: e.target.value})}>
                     <option value="basic">Plano Básico (Sem foto)</option>
                     <option value="premium">Plano Premium (Com foto circular)</option>
@@ -874,14 +887,15 @@ function AdminPortal() {
 
 // --- ESTILOS (UNIFICADOS PARA CORREÇÃO DE LARGURA) ---
 const globalWrapper = { 
-  background: '#121212', 
+  background: '#000000', 
   minHeight: '100vh', 
   width: '100vw', 
   display: 'flex', 
   justifyContent: 'center', 
   margin: 0, 
   padding: 0,
-  overflowX: 'hidden'
+  overflowX: 'hidden',
+  fontFamily: '"Helvetica", Times, serif',
 };
 
 const appContainer = { 
@@ -893,7 +907,8 @@ const appContainer = {
   flexDirection: 'column', 
   position: 'relative', 
   overflow: 'hidden',
-  boxSizing: 'border-box'
+  boxSizing: 'border-box',
+  boxShadow: '0 0 50px rgba(0,0,0,0.5)',
 };
 
 const headerStyle = { 
@@ -949,12 +964,15 @@ const navBtnStyle = {
 };
 
 const sectionTitle = { 
-  fontSize: '17px', 
-  fontWeight: '900', 
-  margin: '15px 0 10px 0', 
+  fontSize: '18px', 
+  fontWeight: '700', 
+  margin: '25x 0 15px 0', 
   borderLeft: '4px solid #ff0000', 
   paddingLeft: '10px',
-  color: '#fff'
+  color: '#fff',
+  borderBottom: '1px solid #333',
+  paddingBottom: '8px',
+  letterSpacing: '0.5px',
 };
 
 const superBannerAd = { 
