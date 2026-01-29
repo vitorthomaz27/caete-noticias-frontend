@@ -4,13 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Home, Newspaper, Store, Briefcase, Search, MapPin, 
   Phone, MessageCircle, Star, Camera, Send, Info, 
-  ExternalLink, PlayCircle, Settings, Trash2 
+  ExternalLink, PlayCircle, Settings, Trash2, Calendar
 } from 'lucide-react';
 
 import { getToken } from "firebase/messaging";
 import { messaging } from "./firebase-config"; // Configuração com seus dados do Firebase
 
-// --- CONFIGURAÇÃO SUPABASE ---
+// --- CONFIGURAÇÃO SUPABASE ---s
 const supabase = createClient(
   'https://qhyzzjgqujueleixbjlg.supabase.co', 
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoeXp6amdxdWp1ZWxlaXhiamxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4OTc2NDQsImV4cCI6MjA4MzQ3MzY0NH0.vh-j9ujwpblHYvG8za3nzsMOnLHESbDaN_Aqpwp_Zuc'
@@ -26,6 +26,8 @@ function PublicApp() {
   const [termoBusca, setTermoBusca] = useState('');
   const [noticiaAberta, setNoticiaAberta] = useState(null);
   const [utilidadeAberta, setUtilidadeAberta] = useState(null);
+  const [eventos, setEventos] = useState([]); // Lista de eventos
+  const [eventoSelecionado, setEventoSelecionado] = useState(null); // Controle do Pop-up
   // No início do seu componente App
   const [mostrarBannerPush, setMostrarBannerPush] = useState(Notification.permission !== 'granted');
   const inscreverParaNotificacoes = async () => {
@@ -85,10 +87,13 @@ function PublicApp() {
       // 3. Busca as utilidades na tabela home_config
       const { data: c } = await supabase.from('home_config').select('*').eq('id', 'utilidades').single();
 
+      const { data: e } = await supabase.from('calendario_eventos').select('*').order('data_evento', { ascending: true });
+      
       setNoticias(n || []);
       setGuia(g || []);
       setVagas(v || []);
-      
+      setEventos(e || []);
+
       // Atualiza o estado config com os dados corretos de cada tabela
       setConfig({ 
         banner: b || { titulo: 'Anuncie Aqui', subtitulo: 'Sua marca em destaque' }, 
@@ -249,10 +254,10 @@ function PublicApp() {
               {!noticiaAberta ? (
                 <>
                   <h2 style={sectionTitle}>Últimas Notícias</h2>
-                  {noticias.map(item => (
+                  {noticias.map((item,index)  => (
                     <article 
                       key={item.id} 
-                      style={{...newsRow, cursor: 'pointer'}}
+                      style={{...newsRow, cursor: 'pointer',animationDelay: `${index * 0.4}s`}}
                       className="anime-fade-in" 
                       onClick={() => setNoticiaAberta(item)} // Abre a notícia ao clicar
                     >
@@ -349,11 +354,52 @@ function PublicApp() {
               ))}
             </div>
           )}
-        </main>
+        
 
+        {activeTab === 'eventos' && (
+          <div style={contentPadding} className="anime-fade-in">
+            <h2 style={sectionTitle}>Próximos Eventos</h2>
+            
+            {eventos.map((ev, idx) => (
+              <div 
+                key={ev.id} 
+                style={{...eventCard, animationDelay: `${idx * 0.1}s` }} 
+                className="anime-fade-in"
+                onClick={() => setEventoSelecionado(ev)} // Abre o pop-up
+              >
+                <div style={dateBadge}>
+                  <span style={{fontSize: '18px', fontWeight: '900'}}>{ev.data_evento.split('-')[2]}</span>
+                  <span style={{fontSize: '10px', textTransform: 'uppercase'}}>{new Date(ev.data_evento).toLocaleString('pt-BR', {month: 'short'}).replace('.', '')}</span>
+                </div>
+                <div style={{flex: 1}}>
+                  <h3 style={{color: '#fff', fontSize: '15px', margin: '0 0 5px 0'}}>{ev.titulo}</h3>
+                  <p style={{color: '#888', fontSize: '12px'}}>📍 {ev.local}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        </main>
+        {eventoSelecionado && (
+              <div style={modalOverlay} onClick={() => setEventoSelecionado(null)}>
+                <div style={modalContent} className="anime-fade-in" onClick={e => e.stopPropagation()}>
+                  {eventoSelecionado.imagem_url && (
+                    <img src={eventoSelecionado.imagem_url} style={{width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a1a' }} 
+                      alt="" />
+                  )}
+                  <h2 style={{color: '#fff', fontSize: '20px', marginBottom: '10px'}}>{eventoSelecionado.titulo}</h2>
+                  <p style={{color: '#aaa', fontSize: '14px', lineHeight: '1.5', marginBottom: '20px'}}>{eventoSelecionado.descricao}</p>
+                  <div style={{borderTop: '1px solid #222', paddingTop: '15px'}}>
+                    <p style={{color: '#fff', fontSize: '13px'}}>📍 {eventoSelecionado.local}</p>
+                    <a href={`https://wa.me/${eventoSelecionado.whatsapp}`} style={actionBtnZap}>SABER MAIS / INGRESSOS</a>
+                  </div>
+                </div>
+            </div>
+            )}
         <nav style={bottomNav}>
           <NavButton icon={<Home size={20} />} label="Início" tab="inicio" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Newspaper size={20} />} label="Notícias" tab="noticias" active={activeTab} set={setActiveTab} />
+          <NavButton icon={<Calendar size={20} />} label="Eventos" tab="eventos" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Store size={20} />} label="Guia" tab="guia" active={activeTab} set={setActiveTab} isSpecial />
           <NavButton icon={<Briefcase size={20} />} label="Vagas" tab="vagas" active={activeTab} set={setActiveTab} />
         </nav>
@@ -389,6 +435,8 @@ function AdminPortal() {
 
   const [pushForm, setPushForm] = useState({ titulo: '', mensagem: '', link: '' });
   const [totalInscritos, setTotalInscritos] = useState(0);
+
+  const [formEvento, setFormEvento] = useState({ titulo: '', data: '', local: '', descricao: '', whatsapp: '' }); // Para o Admin
 
   // useEffect para contar quantos usuários você já capturou
   useEffect(() => {
@@ -438,32 +486,59 @@ function AdminPortal() {
   };
 
   const addEmpresa = async () => {
-    // Validação básica
+    // 1. Validação básica
     if (!form.nome || !form.whatsapp) {
       return alert("Por favor, preencha o nome e o WhatsApp da empresa.");
     }
 
     try {
-      const { data, error } = await supabase
-        .from('guia_comercial') // Certifique-se que o nome da tabela no Supabase é 'guia'
+      let urlPublica = null;
+
+      // 2. Lógica de Upload da Imagem (se houver um arquivo selecionado)
+      if (arquivo) {
+        // Cria um nome único para o arquivo
+        const nomeArquivo = `${Date.now()}_logo`;
+
+        // Sobe o arquivo para o bucket 'midia-caete'
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('midia-caete')
+          .upload(nomeArquivo, arquivo);
+
+        if (uploadError) throw uploadError;
+
+        // Gera a URL pública para salvar no banco
+        const { data } = supabase.storage
+          .from('midia-caete')
+          .getPublicUrl(nomeArquivo);
+
+        urlPublica = data.publicUrl; // Agora temos o link: https://...
+      }
+
+      // 3. Cadastro no Banco de Dados
+      const { data: novaEmpresa, error: dbError } = await supabase
+        .from('guia_comercial')
         .insert([
           { 
             nome: form.nome, 
             categoria: form.categoria, 
             whatsapp: form.whatsapp, 
-            plano: form.plano 
+            plano: form.plano,
+            imagem_url: urlPublica // Deixará de ser NULL no banco
           }
         ])
         .select();
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      // Atualiza a lista na tela e limpa o formulário
-      setGuia([...guia, data[0]]);
+      // 4. Atualiza a lista e limpa tudo
+      setGuia([...guia, novaEmpresa[0]]);
       setForm({ nome: '', categoria: 'Alimentação', whatsapp: '', plano: 'basic' });
-      alert("Empresa cadastrada com sucesso!");
+      setArquivo(null); // Limpa o estado do arquivo também
       
+      alert("Empresa cadastrada com sucesso!");
+
     } catch (err) {
+      console.error("Erro completo:", err);
       alert("Erro ao cadastrar: " + err.message);
     }
   };
@@ -671,6 +746,29 @@ function AdminPortal() {
       }
     };
 
+  const addEvento = async () => {
+    try {
+      let urlBanner = null;
+      if (arquivo) {
+        const nomeArq = `${Date.now()}_evento`;
+        await supabase.storage.from('midia-caete').upload(nomeArq, arquivo);
+        const { data } = supabase.storage.from('midia-caete').getPublicUrl(nomeArq);
+        urlBanner = data.publicUrl;
+      }
+
+      const { error } = await supabase.from('calendario_eventos').insert([{
+        titulo: formEvento.titulo,
+        data_evento: formEvento.data,
+        local: formEvento.local,
+        descricao: formEvento.descricao,
+        imagem_url: urlBanner,
+        whatsapp: formEvento.whatsapp
+      }]);
+
+      if (!error) alert("Evento publicado com sucesso!");
+    } catch (err) { alert(err.message); }
+  };
+
   return (
     <div style={globalWrapper}>
       <div style={appContainer}>
@@ -679,10 +777,61 @@ function AdminPortal() {
           <div style={selectorGrid}>
             <button onClick={() => setAba('noticia')} style={aba === 'noticia' ? selActive : selBase}>Notícia</button>
             <button onClick={() => setAba('guia')} style={aba === 'guia' ? selActive : selBase}>Guia</button>
+            <button onClick={() => setAba('eventos')} style={aba === 'eventos' ? selActive : selBase}>Eventos</button>
             <button onClick={() => setAba('vaga')} style={aba === 'vaga' ? selActive : selBase}>Vaga</button>
             <button onClick={() => setAba('config')} style={aba === 'config' ? selActive : selBase}>Início</button>
             <button onClick={() => setAba('push')} style={aba === 'push' ? selActive : selBase}>Push Ads</button>
           </div>
+
+          {aba === 'eventos' && (
+            <div className="anime-fade-in">
+              <h3 style={sectionAdminTitle}>Novo Evento Pago</h3>
+              
+              <input 
+                placeholder="Título do Evento" 
+                style={inStyle} 
+                value={formEvento.titulo} 
+                onChange={e => setFormEvento({...formEvento, titulo: e.target.value})} 
+              />
+              
+              <input 
+                type="date" 
+                style={inStyle} 
+                value={formEvento.data} 
+                onChange={e => setFormEvento({...formEvento, data: e.target.value})} 
+              />
+              
+              <input 
+                placeholder="Local (Ex: Praça da Matriz)" 
+                style={inStyle} 
+                value={formEvento.local} 
+                onChange={e => setFormEvento({...formEvento, local: e.target.value})} 
+              />
+
+              <input 
+                placeholder="WhatsApp para Informações" 
+                style={inStyle} 
+                value={formEvento.whatsapp} 
+                onChange={e => setFormEvento({...formEvento, whatsapp: e.target.value})} 
+              />
+              
+              <textarea 
+                placeholder="Descrição detalhada para o Pop-up..." 
+                style={{ ...inStyle, height: '100px', paddingTop: '10px' }} 
+                value={formEvento.descricao} 
+                onChange={e => setFormEvento({...formEvento, descricao: e.target.value})} 
+              />
+
+              <label style={drop}>
+                <Camera size={20} /> {arquivo ? arquivo.name : "Banner do Evento (Opcional)"}
+                <input type="file" style={{ display: 'none' }} onChange={e => setArquivo(e.target.files[0])} />
+              </label>
+              
+              <button onClick={addEvento} style={{ ...subBtn, marginTop: '20px' }}>
+                PUBLICAR NO CALENDÁRIO
+              </button>
+            </div>
+          )}
 
           {aba === 'push' && (
               <div style={adminSection}>
@@ -812,6 +961,11 @@ function AdminPortal() {
                     value={form.resumo} 
                     onChange={e => setForm({...form, resumo: e.target.value})} 
                   />
+                  <label style={drop}>
+                    <Camera/> {arquivo ? arquivo.name : "Selecionar Foto"}
+                    <input type="file" style={{display:'none'}} onChange={e=>setArquivo(e.target.files[0])} />
+                </label>
+                <button onClick={setNoticias} style={subBtn}>PUBLICAR</button>
                 </>
               )}
 
@@ -875,10 +1029,7 @@ function AdminPortal() {
                   <input placeholder="Título da Vaga" style={inStyle} value={form.titulo} onChange={e=>setForm({...form, titulo: e.target.value})} />
                   <input placeholder="Empresa" style={inStyle} value={form.empresa} onChange={e=>setForm({...form, empresa: e.target.value})} />
                   <textarea placeholder="Descrição" style={{...inStyle, height: '80px'}} value={form.descricao} onChange={e=>setForm({...form, descricao: e.target.value})} />
-                <label style={drop}>
-                  <Camera/> {arquivo ? arquivo.name : "Selecionar Foto"}
-                  <input type="file" style={{display:'none'}} onChange={e=>setArquivo(e.target.files[0])} />
-                </label>
+                  <input placeholder="WhatsApp (Com DDD)" style={inStyle} value={form.whatsapp} onChange={e=>setForm({...form, whatsapp: e.target.value})} />
                   <button type="submit" style={subBtn}>PUBLICAR AGORA</button>
                 </>      
               )}
@@ -903,7 +1054,60 @@ const globalWrapper = {
   overflowX: 'hidden',
   fontFamily: "'Inter', system-ui, -apple-system, sans-serif", // Stack moderna
 };
+const eventCard = {
+  background: 'rgba(255, 255, 255, 0.03)',
+  backdropFilter: 'blur(10px)',
+  borderRadius: '18px',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  padding: '15px',
+  marginBottom: '15px',
+  display: 'flex',
+  gap: '15px',
+  width: '100%',
+  boxSizing: 'border-box'
+};
 
+const dateBadge = {
+  background: 'linear-gradient(135deg, #ff0000, #cc0000)',
+  borderRadius: '12px',
+  width: '55px',
+  height: '55px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#fff',
+  flexShrink: 0
+};
+
+const modalOverlay = {
+position: 'fixed', 
+  top: 0, 
+  left: 0, 
+  right: 0, 
+  bottom: 0,
+  background: 'rgba(0, 0, 0, 0.5)', // Mais escuro para esconder o fundo
+  backdropFilter: 'blur(12px)', 
+  display: 'flex', 
+  justifyContent: 'center', 
+  alignItems: 'center', 
+  zIndex: 9999, // Valor bem alto para ficar acima do Header e Nav
+  padding: '20px'
+};
+
+const modalContent = {
+  background: '#0d0d0f', 
+  borderRadius: '24px', 
+  border: '1px solid #333',
+  padding: '25px', 
+  width: '100%', 
+  maxWidth: '400px', 
+  position: 'relative',
+  boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+  maxHeight: '85vh',     // Define que o modal só pode ocupar 85% da altura da tela
+  overflowY: 'auto',     // Ativa a barra de rolagem se o conteúdo "vazar"
+  WebkitOverflowScrolling: 'touch' 
+};
 const appContainer = { 
   width: '100%', 
   maxWidth: '480px', 
@@ -934,7 +1138,11 @@ const scrollableContent = {
   overflowY: 'auto', 
   paddingBottom: '100px', // Aumentado para o conteúdo não ficar escondido atrás da barra maior
   width: '100%',
-  boxSizing: 'border-box' 
+  boxSizing: 'border-box',
+  display: 'flex', 
+  flexDirection: 'column', 
+  justifyContent: 'flex-start', // Força o conteúdo a "grudar" no topo
+  alignItems: 'stretch'
 };
 
 const contentPadding = { 
