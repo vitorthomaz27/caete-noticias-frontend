@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Home, Newspaper, Store, Briefcase, Search, MapPin, 
   Phone, MessageCircle, Star, Camera, Send, Info, 
-  ExternalLink, PlayCircle, Settings, Trash2, Calendar
+  ExternalLink, PlayCircle, Settings, Trash2, Calendar, X, FileText, Play
 } from 'lucide-react';
 
 import { getToken } from "firebase/messaging";
@@ -104,6 +104,16 @@ function PublicApp() {
     fetchData();
   }, []);
 
+  const handleAbrirUtilidade = (u) => {
+    if (u.tipo === 'pdf') {
+      // Abre o PDF em uma nova aba para não fechar o app
+      window.open(u.url, '_blank'); 
+    } else {
+      // Se for imagens ou telefones, você usa o estado que já tem
+      setUtilidadeAberta(u); 
+    }
+  };
+
   return (
     <div style={globalWrapper}>
       <div style={appContainer}>
@@ -173,7 +183,7 @@ function PublicApp() {
                 </div>
               )}
               {/* SEÇÃO DE DESTAQUES (NOTÍCIAS) */}
-              <h2 style={sectionTitle}><Star size={18} color="#ff0000"/> Destaques</h2>
+              <h2 style={sectionTitle}><Star size={18} color="#ff0000"/> Patrocinado</h2>
               {noticias.filter(n => n.tipo === 'destaque').slice(0, 2).map(item => (
                 <div key={item.id} style={heroNewsCard}>
                   <img src={item.imagem_url} style={heroImg} alt="" />
@@ -226,7 +236,49 @@ function PublicApp() {
                       ))}
                     </div>
                   )}
+                  {/* SEÇÃO: DOCUMENTO PDF (GUIA DE CAETÉ) */}
+                  {utilidadeAberta.tipo === 'pdf' && (
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                      {/* Ícone visual para indicar que é um arquivo */}
+                      <div style={{ marginBottom: '20px' }}>
+                        <FileText size={60} color="#ff0000" />
+                      </div>
 
+                      <button 
+                        onClick={() => {const linkReal = utilidadeAberta.dados || utilidadeAberta.url;
+
+                          if (linkReal && typeof linkReal === 'string')
+                            {window.open(utilidadeAberta.dados, '_blank');
+                            } else {
+                              alert("O arquivo dessa guia ainda não foi carregado corretamente");}
+
+                            }
+                          }
+                        style={{
+                          background: '#ff0000',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          width: '100%',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '10px',
+                          boxShadow: '0 4px 15px rgba(255, 0, 0, 0.2)'
+                        }}
+                      >
+                        VISUALIZAR GUIA COMPLETO 📑
+                      </button>
+                      
+                      <p style={{ color: '#666', fontSize: '12px', marginTop: '15px' }}>
+                        O documento será aberto em uma nova aba do seu navegador.
+                      </p>
+                    </div>
+                  )}
                   {/* SEÇÃO: TELEFONES ÚTEIS (LISTA) */}
                   {utilidadeAberta.tipo === 'telefones' && (
                     <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
@@ -257,11 +309,31 @@ function PublicApp() {
                   {noticias.map((item,index)  => (
                     <article 
                       key={item.id} 
-                      style={{...newsRow, cursor: 'pointer',animationDelay: `${index * 0.4}s`}}
+                      style={{...newsRow, cursor: 'pointer',animationDelay: `${index * 0.25}s`}}
                       className="anime-fade-in" 
                       onClick={() => setNoticiaAberta(item)} // Abre a notícia ao clicar
                     >
+                    <div style={{ position: 'relative', width: 'fit-content', height: 'fit-content', flexShrink: 0}}>
                       <img src={item.imagem_url} style={newsThumb} alt="" />
+
+                      {/* Só aparece se o robô do Apify tiver identificado um vídeo */}
+                      {item.video_url && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(0, 0, 0, 0.2)', // Leve sombra para o Play destacar
+                          borderRadius: '6px' // Ajuste conforme o seu newsThumb
+                        }}>
+                          <Play size={20} color="#fff" fill="#fff" />
+                      </div>
+                    )}
+                    </div>
                       <div style={newsContent}>
                         <span style={newsCategory}>CAETÉ</span>
                         <h3 style={newsTitleCompact}>{item.titulo}</h3>
@@ -383,6 +455,15 @@ function PublicApp() {
         {eventoSelecionado && (
               <div style={modalOverlay} onClick={() => setEventoSelecionado(null)}>
                 <div style={modalContent} className="anime-fade-in" onClick={e => e.stopPropagation()}>
+
+                  <button 
+                    onClick={() => setEventoSelecionado(null)} 
+                    style={modalCloseBtn}
+                    aria-label="Fechar"
+                  >
+                    < X size={18} /> {/* Ou apenas ✕ */}
+                  </button>
+
                   {eventoSelecionado.imagem_url && (
                     <img src={eventoSelecionado.imagem_url} style={{width: '100%', height: '100%', objectFit: 'contain', background: '#1a1a1a' }} 
                       alt="" />
@@ -400,7 +481,7 @@ function PublicApp() {
           <NavButton icon={<Home size={20} />} label="Início" tab="inicio" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Newspaper size={20} />} label="Notícias" tab="noticias" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Calendar size={20} />} label="Eventos" tab="eventos" active={activeTab} set={setActiveTab} />
-          <NavButton icon={<Store size={20} />} label="Guia" tab="guia" active={activeTab} set={setActiveTab} isSpecial />
+          <NavButton icon={<Store size={20} />} label="Lojas" tab="guia" active={activeTab} set={setActiveTab} isSpecial />
           <NavButton icon={<Briefcase size={20} />} label="Vagas" tab="vagas" active={activeTab} set={setActiveTab} />
         </nav>
       </div>
@@ -409,7 +490,7 @@ function PublicApp() {
 }
 
 const NavButton = ({ icon, label, tab, active, set, isSpecial }) => (
-  <button onClick={() => set(tab)} style={{...navBtnStyle, color: active === tab ? '#ff0000' : (isSpecial ? '#FFD700' : '#666')}}>
+  <button onClick={() => set(tab)} style={{...navBtnStyle, color: active === tab ? '#ff0000' : (isSpecial ? '#ff0000' : '#666')}}>
     {icon} <span style={{fontSize: '10px'}}>{label}</span>
   </button>
 );
@@ -427,6 +508,7 @@ function AdminPortal() {
   const [arquivosUtil, setArquivosUtil] = useState([]); // Array para múltiplas fotos
   const [contatosUtil, setContatosUtil] = useState([{ nome: '', numero: '' }]); // Array de objetos
   const [guia, setGuia] = useState([]); // Isso cria a variável 'guia' como uma lista vazia
+  const [arquivoPdf, setArquivoPdf] = useState(null);
   const [bannerData, setBannerData] = useState(null);
   // Define a "caixa" para guardar os textos do banner
   const [bannerForm, setBannerForm] = useState({ titulo: '', subtitulo: '' });
@@ -562,29 +644,43 @@ function AdminPortal() {
   }, [aba]);
 
   const addUtilidadeComplexa = async () => {
-  setEnviando(true);
-  try {
-    let dadosFinal = [];
+    setEnviando(true);
+    try {
+      let dadosFinal = null; // Inicializamos como nulo para receber qualquer tipo de dado
 
-    // Lógica para IMAGENS (Ônibus, etc)
-    if (tipoUtil === 'imagens') {
-      const uploads = Array.from(arquivosUtil).map(async (file) => {
-        const nomeUnico = `util_${Date.now()}_${file.name}`;
-        await supabase.storage.from('midia-caete').upload(nomeUnico, file);
-        return supabase.storage.from('midia-caete').getPublicUrl(nomeUnico).data.publicUrl;
-      });
-      dadosFinal = await Promise.all(uploads);
-    } 
-    // Lógica para TELEFONES
-    else {
-      dadosFinal = contatosUtil.filter(c => c.nome && c.numero);
-    }
+      // 1. Lógica exclusiva para PDF
+      if (tipoUtil === 'pdf' && arquivoPdf) {
+        const fileName = `utilidade_${Date.now()}.pdf`;
+        const { data, error } = await supabase.storage
+          .from('midia-caete')
+          .upload(fileName, arquivoPdf);
 
-    const novaUtilidade = {
+        if (error) throw error;
+
+        const { data: urlData } = supabase.storage.from('midia-caete').getPublicUrl(fileName);
+        dadosFinal = urlData.publicUrl; // Guardamos o link direto na variável que será salva
+      } 
+      
+      // 2. Lógica exclusiva para IMAGENS
+      else if (tipoUtil === 'imagens') {
+        const uploads = Array.from(arquivosUtil).map(async (file) => {
+          const nomeUnico = `util_${Date.now()}_${file.name}`;
+          await supabase.storage.from('midia-caete').upload(nomeUnico, file);
+          return supabase.storage.from('midia-caete').getPublicUrl(nomeUnico).data.publicUrl;
+        });
+        dadosFinal = await Promise.all(uploads); // Aqui dadosFinal vira um Array de links
+      } 
+      
+      // 3. Lógica exclusiva para TELEFONES
+      else if (tipoUtil === 'telefones') {
+        dadosFinal = contatosUtil.filter(c => c.nome && c.numero); // Aqui dadosFinal vira um Array de Objetos
+      }
+
+      const novaUtilidade = {
         nome: configHome.utilNome,
         info: configHome.utilInfo,
         tipo: tipoUtil,
-        dados: dadosFinal
+        dados: dadosFinal // Agora 'dados' contém o link do PDF, as fotos ou os contatos!
       };
 
       const novaListaGeral = [...utilidadesAtuais, novaUtilidade];
@@ -596,10 +692,12 @@ function AdminPortal() {
 
       if (error) throw error;
 
-      alert("Utilidade adicionada com sucesso!");
+      alert("Utilidade de Caeté adicionada com sucesso!");
       setUtilidadesAtuais(novaListaGeral);
-      // Limpar campos
+      
+      // Limpar campos e estados
       setArquivosUtil([]);
+      setArquivoPdf(null);
       setContatosUtil([{ nome: '', numero: '' }]);
       setConfigHome({ ...configHome, utilNome: '', utilInfo: '' });
     } catch (err) {
@@ -883,18 +981,25 @@ function AdminPortal() {
                   <input placeholder="Subtítulo (Ex: Horários Atualizados)" style={inStyle} value={configHome.utilInfo} onChange={e=>setConfigHome({...configHome, utilInfo: e.target.value})} />
                   
                   <select style={{...inStyle, marginBottom: '15px'}} value={tipoUtil} onChange={e => setTipoUtil(e.target.value)}>
-                    <option value="imagens">Carrossel de Imagens (Ônibus)</option>
+                    <option value="imagens">Carrossel de Imagens</option>
                     <option value="telefones">Lista de Telefones Úteis</option>
+                    <option value="pdf">Documento PDF (Guia, Informativos)</option>
                   </select>
 
                   {/* CAMPOS PARA IMAGENS */}
                   {tipoUtil === 'imagens' && (
                     <label style={{...drop, borderStyle: 'dashed', marginBottom: '15px', cursor: 'pointer'}}>
-                      <Camera size={20}/> {arquivosUtil.length > 0 ? `${arquivosUtil.length} fotos selecionadas` : "Selecionar fotos dos horários"}
+                      <Camera size={20}/> {arquivosUtil.length > 0 ? `${arquivosUtil.length} fotos selecionadas` : "Selecionar fotos"}
                       <input type="file" multiple style={{display:'none'}} accept="image/*" onChange={e=>setArquivosUtil(e.target.files)} />
                     </label>
                   )}
-
+                  {/* CAMPOS PARA PDF */}
+                  {tipoUtil === 'pdf' && (
+                    <label style={{...drop, borderStyle: 'dashed', marginBottom: '15px', cursor: 'pointer'}}>
+                      <FileText size={20}/> {arquivoPdf ? arquivoPdf.name : "Selecionar Guia em PDF"}
+                      <input type="file" style={{display:'none'}} accept="application/pdf" onChange={e=>setArquivoPdf(e.target.files[0])} />
+                    </label>
+                  )}
                   {/* CAMPOS PARA TELEFONES */}
                   {tipoUtil === 'telefones' && (
                     <div style={{display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px'}}>
@@ -1108,6 +1213,26 @@ const modalContent = {
   overflowY: 'auto',     // Ativa a barra de rolagem se o conteúdo "vazar"
   WebkitOverflowScrolling: 'touch' 
 };
+
+const modalCloseBtn = {
+  position: 'absolute',
+  top: '15px',
+  right: '15px',
+  width: '32px',
+  height: '32px',
+  borderRadius: '50%',
+  background: 'rgba(0, 0, 0, 0.5)', // Fundo escuro para destacar o X branco
+  backdropFilter: 'blur(5px)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  color: '#fff',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  zIndex: 10, // Garante que fique acima da imagem do evento
+  transition: '0.2s'
+};
+
 const appContainer = { 
   width: '100%', 
   maxWidth: '480px', 
@@ -1200,7 +1325,7 @@ const titleIndicator = {
 
 const superBannerAd = { 
   background: 'linear-gradient(45deg, #ff0000, #cc0000)', 
-  padding: '18px', 
+  padding: '30px', 
   borderRadius: '12px', 
   marginBottom: '18px', 
   position: 'relative', 
