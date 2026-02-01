@@ -63,6 +63,19 @@ function PublicApp() {
       // Se o erro persistir, pode ser cache. Tente em Aba Anônima.
     }
   };
+
+  useEffect(() => {
+    // 1. Reseta o scroll global do navegador
+    window.scrollTo(0, 0);
+
+    // 2. Reseta o scroll do container interno (onde ficam as suas notícias)
+    // Procure o ID ou a classe da div que tem o 'contentPadding'
+    const container = document.querySelector('[style*="overflow-y: auto"]');
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }, [activeTab, noticiaAberta, utilidadeAberta]); // Roda se qualquer um desses mudar!
+
   useEffect(() => {
     // Tenta inscrever automaticamente após 5 segundos
     const timer = setTimeout(() => {
@@ -351,7 +364,29 @@ function PublicApp() {
                   >
                     ← Voltar para a notícias
                   </button>
-                  <img src={noticiaAberta.imagem_url} style={{width: '100%', borderRadius: '12px', marginBottom: '15px'}} alt="" />
+
+                  {/* LOGICA DE VÍDEO OU IMAGEM */}
+                  {noticiaAberta.video_url ? (
+                    <video 
+                      src={noticiaAberta.video_url} 
+                      controls 
+                      playsInline
+                      poster={noticiaAberta.imagem_url} // Usa a imagem como capa antes do play
+                      style={{
+                        width: '100%', 
+                        borderRadius: '12px', 
+                        marginBottom: '15px',
+                        backgroundColor: '#000'
+                      }}
+                    />
+                  ) : (
+
+                    <img 
+                      src={noticiaAberta.imagem_url} 
+                      style={{width: '100%', borderRadius: '12px', marginBottom: '15px'}} 
+                      alt="" 
+                    />
+                  )}
                   <h1 style={{fontSize: '22px', marginBottom: '10px'}}>{noticiaAberta.titulo}</h1>
                   <span style={newsDate}>{new Date(noticiaAberta.created_at).toLocaleDateString('pt-BR')}</span>
                   <div style={{marginTop: '20px', lineHeight: '1.6', color: '#ccc', fontSize: '16px', whiteSpace: 'pre-wrap'}}>
@@ -481,7 +516,7 @@ function PublicApp() {
           <NavButton icon={<Home size={20} />} label="Início" tab="inicio" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Newspaper size={20} />} label="Notícias" tab="noticias" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Calendar size={20} />} label="Eventos" tab="eventos" active={activeTab} set={setActiveTab} />
-          <NavButton icon={<Store size={20} />} label="Lojas" tab="guia" active={activeTab} set={setActiveTab} isSpecial />
+          <NavButton icon={<Store size={20} />} label="Lojas" tab="guia" active={activeTab} set={setActiveTab} />
           <NavButton icon={<Briefcase size={20} />} label="Vagas" tab="vagas" active={activeTab} set={setActiveTab} />
         </nav>
       </div>
@@ -490,7 +525,7 @@ function PublicApp() {
 }
 
 const NavButton = ({ icon, label, tab, active, set, isSpecial }) => (
-  <button onClick={() => set(tab)} style={{...navBtnStyle, color: active === tab ? '#ff0000' : (isSpecial ? '#ff0000' : '#666')}}>
+  <button onClick={() => set(tab)} style={{...navBtnStyle, color: active === tab ? '#ff0000' : ('#666')}}>
     {icon} <span style={{fontSize: '10px'}}>{label}</span>
   </button>
 );
@@ -1079,10 +1114,14 @@ function AdminPortal() {
                   {/* FORMULÁRIO DE CADASTRO (O QUE JÁ EXISTIA) */}
                   <input placeholder="Nome da Empresa" style={inStyle} value={form.nome} onChange={e=>setForm({...form, nome: e.target.value})} />
                   <select style={inStyle} value={form.categoria} onChange={e=>setForm({...form, categoria: e.target.value})}>
-                    <option value="Alimentação">🍔 Alimentação</option>
+                    <option value="Restaurantes">🍲 Restaurantes</option>
                     <option value="Saúde">💊 Saúde</option>
                     <option value="Serviços">🛠 Serviços</option>
                     <option value="Lojas">🛒 Lojas</option>
+                    <option value="Finanças"> 💵 Finanças</option>
+                    <option value="Pizzarias">🍕 Pizzaria </option>
+                    <option value="Lanches">🍔 Lanches </option>
+                    <option value="Padarias">🍞 Padarias </option>
                   </select>
                   <input placeholder="WhatsApp (Com DDD)" style={inStyle} value={form.whatsapp} onChange={e=>setForm({...form, whatsapp: e.target.value})} />
                   
